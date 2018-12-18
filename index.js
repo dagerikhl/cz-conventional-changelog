@@ -1,11 +1,17 @@
-"format cjs";
+'format cjs';
 
 var engine = require('./engine');
 var conventionalCommitTypes = require('conventional-commit-types');
 
+var commitlint = undefined;
+try {
+  commitlint = require('./commitlint.config.js');
+} catch (ex) {}
+
 module.exports = engine({
   types: conventionalCommitTypes.types,
   defaultType: process.env.CZ_TYPE,
+  scopes: commitlint ? commitlint.rules['scope-enum'][2] : undefined,
   defaultScope: process.env.CZ_SCOPE,
   defaultSubject: process.env.CZ_SUBJECT,
   defaultBody: process.env.CZ_BODY,

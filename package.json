@@ -1,19 +1,17 @@
 {
-  "name": "cz-conventional-changelog",
-  "version": "0.0.0-semantically-released.0",
+  "name": "cz-conventional-changelog-lab",
+  "version": "0.0.0",
   "description": "Commitizen adapter following the conventional-changelog format.",
   "main": "index.js",
   "scripts": {
-    "commit": "git-cz",
-    "test": "echo 'Tests need to be setup!'",
-    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
+    "commit": "git-cz"
   },
-  "homepage": "https://github.com/commitizen/cz-conventional-changelog",
+  "homepage": "https://github.com/dagerikhl/cz-conventional-changelog-lab",
   "repository": {
     "type": "git",
-    "url": "https://github.com/commitizen/cz-conventional-changelog.git"
+    "url": "https://github.com/dagerikhl/cz-conventional-changelog-lab.git"
   },
-  "author": "Jim Cummins <jimthedev@gmail.com>",
+  "author": "Dag Erik Løvgren <dagerikhl@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "conventional-commit-types": "^2.0.0",
@@ -23,11 +21,10 @@
     "word-wrap": "^1.0.3"
   },
   "devDependencies": {
-    "commitizen": "2.9.6",
-    "semantic-release": "^6.3.2"
+    "commitizen": "2.9.6"
   },
   "config": {
-    "commitizen" : {
+    "commitizen": {
       "path": "./index.js"
     }
   }

@@ -11,13 +11,17 @@ var filter = function(array) {
   });
 };
 
+var lowerCaseFirstLetter = function(sentence) {
+  return sentence.charAt(0).toLowerCase() + sentence.slice(1);
+};
+
 var buildScope = function(scope) {
   var builtScope = scope.trim();
   return builtScope ? '(' + builtScope + ')' : '';
 };
 
 var buildSubjectLine = function(answers, subject = answers.subject) {
-  return answers.type + buildScope(answers.scope) + ': ' + subject.trim();
+  return answers.type + buildScope(answers.scope) + ': ' + lowerCaseFirstLetter(subject.trim());
 };
 
 var buildIssues = function(issues) {
@@ -75,10 +79,13 @@ module.exports = function (options) {
         }, {
           type: 'input',
           name: 'subject',
-          message: 'Write a short, imperative tense description of the change (max 72 chars with type+scope):\n',
+          message: 'Write a short, imperative tense, lowercase description of the change (max 72 chars for "type(scope): description"):\n',
           default: options.defaultSubject,
+          transformer: function(input) {
+            return lowerCaseFirstLetter(input);
+          },
           validate: function(input, answers) {
-            return buildSubjectLine(answers, input).length <= 72;
+            return buildSubjectLine(answers, input).length <= 72 || 'Max 72 chars for "type(scope): description"';
           }
         }, {
           type: 'input',

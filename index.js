@@ -5,7 +5,8 @@ var conventionalCommitTypes = require('conventional-commit-types');
 
 var commitlint = undefined;
 try {
-  commitlint = require('./commitlint.config.js');
+  // Assume this folder is in top-level node_modules and that commitlint config is in project root
+  commitlint = require('../../commitlint.config.js');
 } catch (ex) {}
 
 module.exports = engine({

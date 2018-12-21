@@ -105,18 +105,13 @@ module.exports = function (options) {
             return answers.isBreaking;
           }
         }, {
-          type: 'confirm',
-          name: 'isIssueAffected',
-          message: 'Does this change affect any open issues?',
-          default: options.defaultIssues ? true : false
-        }, {
           type: 'input',
           name: 'issues',
           message: 'Add issue references (e.g. "resolve PROJECT-123", "close PROJECT-123".):\n',
-          when: function(answers) {
-            return answers.isIssueAffected;
-          },
-          default: options.defaultIssues ? options.defaultIssues : undefined
+          default: options.defaultIssues ? options.defaultIssues : undefined,
+          validate: function(input, answers) {
+            return input !== '' || 'You must provide at least one issue reference';
+          }
         }
       ]).then(function(answers) {
         var maxLineWidth = 100;

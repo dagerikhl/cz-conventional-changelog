@@ -4,6 +4,7 @@ import conventionalCommitTypes from 'conventional-commit-types';
 
 import { engine } from './engine';
 
+// noinspection JSUnusedGlobalSymbols
 export default engine({
     types: conventionalCommitTypes.types,
     defaultType: process.env.CZ_TYPE,

@@ -9,12 +9,14 @@ const filterExisting = (array) => array.filter((x) => x);
 
 export const engine = (options) => {
     const types = options.types;
+    // noinspection JSUnresolvedVariable
     const length = longest(Object.keys(types)).length + 1;
     const choices = map(types, (type, key) => ({
-        name: rightPad(key + ':', length) + ' ' + type.description,
+        name: `${rightPad(`${key}:`, length)} ${type.description}`,
         value: key
     }));
 
+    // noinspection JSUnusedGlobalSymbols
     return {
         prompter: (cz, commit) => {
             console.log(
@@ -51,7 +53,7 @@ export const engine = (options) => {
                     type: 'input',
                     name: 'breaking',
                     message: 'Describe the breaking changes:\n',
-                    when: (answers) => answers.isBreaking
+                    when: ({ isBreaking }) => isBreaking
                 }, {
                     type: 'confirm',
                     name: 'isIssueAffected',
@@ -61,10 +63,10 @@ export const engine = (options) => {
                     type: 'input',
                     name: 'issues',
                     message: 'Add issue references (e.g. "fix #123", "re #123".):\n',
-                    when: (answers) => answers.isIssueAffected,
+                    when: ({ isIssueAffected }) => isIssueAffected,
                     default: options.defaultIssues ? options.defaultIssues : undefined
                 }
-            ]).then((answers) => {
+            ]).then(({ scope, type, subject, body, breaking, issues }) => {
                 const maxLineWidth = 100;
                 const wrapOptions = {
                     trim: true,
@@ -74,25 +76,26 @@ export const engine = (options) => {
                 };
 
                 // parentheses are only needed when a scope is present
-                let scope = answers.scope.trim();
-                scope = scope ? `(${answers.scope.trim()})` : '';
+                let scopeString = scope.trim();
+                scopeString = scopeString ? `(${scope.trim()})` : '';
 
                 // Hard limit this line
-                const head = `${answers.type}${scope}: ${answers.subject.trim()}`.slice(0, maxLineWidth);
+                const head = `${type}${scopeString}: ${subject.trim()}`.slice(0, maxLineWidth);
 
                 // Wrap these lines at 100 characters
-                const body = wrap(answers.body, wrapOptions);
+                const bodyString = wrap(body, wrapOptions);
 
                 // Apply breaking change prefix, removing it if already present
-                let breaking = answers.breaking ? answers.breaking.trim() : '';
-                breaking = breaking ? `BREAKING CHANGE: ${breaking.replace(/^BREAKING CHANGE: /, '')}` : '';
-                breaking = wrap(breaking, wrapOptions);
+                let breakingString = breaking ? breaking.trim() : '';
+                breakingString =
+                    breakingString ? `BREAKING CHANGE: ${breakingString.replace(/^BREAKING CHANGE: /, '')}` : '';
+                breakingString = wrap(breakingString, wrapOptions);
 
-                const issues = answers.issues ? wrap(answers.issues, wrapOptions) : '';
+                const issuesString = issues ? wrap(issues, wrapOptions) : '';
 
-                const footer = filterExisting([breaking, issues]).join('\n\n');
+                const footer = filterExisting([breakingString, issuesString]).join('\n\n');
 
-                commit(head + '\n\n' + body + '\n\n' + footer);
+                commit(head + '\n\n' + bodyString + '\n\n' + footer);
             });
         }
     };

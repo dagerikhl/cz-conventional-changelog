@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "babel src --out-dir dist",
-    "start": "npm run build && node ./dist/index.js",
+    "build:watch": "babel -w src --out-dir dist",
     "commit": "git-cz",
     "release": "standard-version"
   },

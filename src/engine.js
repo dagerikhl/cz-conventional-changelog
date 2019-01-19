@@ -7,11 +7,12 @@ import wrap from 'word-wrap';
 
 const filterExisting = (array) => array.filter((x) => x);
 
+const print = (message) => console.log(`[CZ] ${message}\n`);
+
 export const engine = (options) => {
-    const types = options.types;
     // noinspection JSUnresolvedVariable
-    const length = longest(Object.keys(types)).length + 1;
-    const choices = map(types, (type, key) => ({
+    const length = longest(Object.keys(options.types)).length + 1;
+    const choices = map(options.types, (type, key) => ({
         name: `${rightPad(`${key}:`, length)} ${type.description}`,
         value: key
     }));
@@ -19,8 +20,7 @@ export const engine = (options) => {
     // noinspection JSUnusedGlobalSymbols
     return {
         prompter: (cz, commit) => {
-            console.log(
-                '\nLine 1 will be cropped at 100 characters. All other lines will be wrapped after 100 characters.\n');
+            print('Subject line will be forced to 72 characters. All other lines will be wrapped at 100 characters.');
 
             cz.prompt([
                 {
@@ -87,8 +87,9 @@ export const engine = (options) => {
 
                 // Apply breaking change prefix, removing it if already present
                 let breakingString = breaking ? breaking.trim() : '';
-                breakingString =
-                    breakingString ? `BREAKING CHANGE: ${breakingString.replace(/^BREAKING CHANGE: /, '')}` : '';
+                breakingString = breakingString
+                    ? `BREAKING CHANGE: ${breakingString.replace(/^BREAKING CHANGE: /, '')}`
+                    : '';
                 breakingString = wrap(breakingString, wrapOptions);
 
                 const issuesString = issues ? wrap(issues, wrapOptions) : '';

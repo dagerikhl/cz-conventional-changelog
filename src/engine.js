@@ -5,9 +5,25 @@ import longest from 'longest';
 import rightPad from 'right-pad';
 import wrap from 'word-wrap';
 
-const filterExisting = (array) => array.filter((x) => x);
+const MAX_SUBJECT_LINE_LENGTH = 72;
+const MAX_LINE_WIDTH = 100;
+
+const wrapOptions = {
+    trim: true,
+    newline: '\n',
+    indent: '',
+    width: MAX_LINE_WIDTH
+};
+const wrapLine = (message) => wrap(message, wrapOptions);
 
 const print = (message) => console.log(`[CZ] ${message}\n`);
+
+const required = (message) => `${message}:\n`;
+const optional = (message) => `${message}: (press ENTER to skip)\n`;
+const question = (message) => `${message}?`;
+
+const generateScope = (scope) => scope.trim() ? `(${scope.trim()})` : '';
+const generateSubjectLine = (type, scope, description) => `${type}${generateScope(scope)}: ${description.trim()}`;
 
 export const engine = (options) => {
     // noinspection JSUnresolvedVariable
@@ -20,83 +36,100 @@ export const engine = (options) => {
     // noinspection JSUnusedGlobalSymbols
     return {
         prompter: (cz, commit) => {
-            print('Subject line will be forced to 72 characters. All other lines will be wrapped at 100 characters.');
+            print(`Subject line will be forced to ${MAX_SUBJECT_LINE_LENGTH} characters.` +
+                ` All other lines will be wrapped at ${MAX_LINE_WIDTH} characters.`);
 
             cz.prompt([
                 {
                     type: 'list',
                     name: 'type',
-                    message: 'Select the type of change that you\'re committing:',
+                    message: required('Select the type of change that you\'re committing'),
                     choices: choices,
                     default: options.defaultType
                 }, {
                     type: 'input',
                     name: 'scope',
-                    message: 'What is the scope of this change (e.g. component or file name)? (press enter to skip)\n',
-                    default: options.defaultScope
+                    message: optional('Type the scope of this change (e.g. one component or one file name)'),
+                    default: options.defaultScope,
+                    validate: (input) => {
+                        input = input.trim();
+
+                        if (/[A-Z]/.test(input)) {
+                            return 'The scope must be lowercase.';
+                        }
+
+                        if (!/^[a-z09]*$/.test(input)) {
+                            return 'You can only provide one scope.';
+                        }
+
+                        return true;
+                    }
                 }, {
                     type: 'input',
                     name: 'subject',
-                    message: 'Write a short, imperative tense description of the change:\n',
-                    default: options.defaultSubject
+                    message: required('Write a short, imperative tense, description, starting lowercase.' +
+                        ` Max ${MAX_SUBJECT_LINE_LENGTH} characters for the subject line, "type(scope): description"`),
+                    default: options.defaultSubject,
+                    validate: (input, answers) => {
+                        input = input.trim();
+
+                        if (input.length === 0) {
+                            return 'You must provide a description.';
+                        }
+
+                        if (!/^[a-z]/.test(input)) {
+                            return 'The description must begin with a lowercase character.';
+                        }
+
+                        const subjectLine = generateSubjectLine(answers.type, answers.scope, input);
+                        if (subjectLine.length > MAX_SUBJECT_LINE_LENGTH) {
+                            return 'The entire subject line, "type(scope): description",' +
+                                ` can not exceed ${MAX_SUBJECT_LINE_LENGTH} characters.`;
+                        }
+
+                        return true;
+                    }
                 }, {
                     type: 'input',
                     name: 'body',
-                    message: 'Provide a longer description of the change: (press enter to skip)\n',
+                    message: optional('Provide a longer description of the change'),
                     default: options.defaultBody
                 }, {
                     type: 'confirm',
                     name: 'isBreaking',
-                    message: 'Are there any breaking changes?',
+                    message: question('Are there any breaking changes'),
                     default: false
                 }, {
                     type: 'input',
                     name: 'breaking',
-                    message: 'Describe the breaking changes:\n',
+                    message: required('Describe the breaking changes'),
                     when: ({ isBreaking }) => isBreaking
                 }, {
                     type: 'confirm',
                     name: 'isIssueAffected',
-                    message: 'Does this change affect any open issues?',
+                    message: question('Does this change affect any open issues'),
                     default: !!options.defaultIssues
                 }, {
                     type: 'input',
                     name: 'issues',
-                    message: 'Add issue references (e.g. "fix #123", "re #123".):\n',
+                    message: required('Add issue references (e.g. "fix #123", "re #123")'),
                     when: ({ isIssueAffected }) => isIssueAffected,
                     default: options.defaultIssues ? options.defaultIssues : undefined
                 }
-            ]).then(({ scope, type, subject, body, breaking, issues }) => {
-                const maxLineWidth = 100;
-                const wrapOptions = {
-                    trim: true,
-                    newline: '\n',
-                    indent: '',
-                    width: maxLineWidth
-                };
+            ]).then(({ type, scope, subject, body, isBreaking, breaking, isIssues, issues }) => {
+                // Generate the subject line on the form "type(scope): description"
+                const subjectLineString = generateSubjectLine(type, scope, subject);
 
-                // parentheses are only needed when a scope is present
-                let scopeString = scope.trim();
-                scopeString = scopeString ? `(${scope.trim()})` : '';
-
-                // Hard limit this line
-                const head = `${type}${scopeString}: ${subject.trim()}`.slice(0, maxLineWidth);
-
-                // Wrap these lines at 100 characters
-                const bodyString = wrap(body, wrapOptions);
-
-                // Apply breaking change prefix, removing it if already present
-                let breakingString = breaking ? breaking.trim() : '';
-                breakingString = breakingString
-                    ? `BREAKING CHANGE: ${breakingString.replace(/^BREAKING CHANGE: /, '')}`
+                // Wrap the lines of the body text to its max
+                const bodyString = body.trim() ? wrapLine(body.trim()) : '';
+                const breakingString = isBreaking && breaking.trim()
+                    ? wrapLine(`BREAKING CHANGE: ${breaking.trim()}`)
                     : '';
-                breakingString = wrap(breakingString, wrapOptions);
+                const issuesString = isIssues && issues.trim() ? wrapLine(issues.trim()) : '';
 
-                const issuesString = issues ? wrap(issues, wrapOptions) : '';
+                const footer = `${breakingString}${(breakingString && issuesString) ? '\n\n' : ''}${issuesString}`;
 
-                const footer = filterExisting([breakingString, issuesString]).join('\n\n');
-
-                commit(head + '\n\n' + bodyString + '\n\n' + footer);
+                commit(`${subjectLineString}\n\n${bodyString}${footer ? '\n\n' : ''}${footer}`);
             });
         }
     };
